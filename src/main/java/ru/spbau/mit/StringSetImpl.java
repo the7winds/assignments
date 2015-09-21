@@ -4,201 +4,234 @@ import java.io.*;
 import java.util.*;
 
 public class StringSetImpl implements StringSet, StreamSerializable {
-    private static final int ALPHABET = 100;
-    private static final int MAX_N    = 10000;
-    private static final String END   = new Character((char) 164).toString();
-    private int len = 0;
-    private int trieSize = 0;
-    private Queue<Integer> free;
-    private int[][] counter;
-    private int[][] next;
+    private class Node implements  StreamSerializable {
+        private static final int ALPH = 26;
+        private Node[] upper = new Node[ALPH];
+        private Node[] lower = new Node[ALPH];
+        private boolean terminated = false;
+        private int cnt = 0;
 
+        public Node getNext(char c) {
+            int idx = 0;
+            if (Character.isUpperCase(c)) {
+                idx = c - 'A';
+                return upper[idx];
+            } else {
+                idx = c - 'a';
+                return lower[idx];
+            }
+        }
 
-    public StringSetImpl() {
-        free = new LinkedList<Integer>();
-        counter = new int[MAX_N][ALPHABET];
-        next = new int[MAX_N][ALPHABET];
+        public void setTerm(boolean t) {
+            terminated = t;
+        }
+
+        public boolean isTerm() {
+            return terminated;
+        }
+
+        public void decCnt() {
+            cnt--;
+        }
+
+        public void incCtn() {
+            cnt++;
+        }
+
+        public int getCnt() {
+            return cnt;
+        }
+
+        public void addRef(char c) {
+            int idx = 0;
+            if (Character.isUpperCase(c)) {
+                idx = c - 'A';
+                upper[idx] = new Node();
+            } else {
+                idx = c - 'a';
+                lower[idx] = new Node();
+            }
+        }
+
+        public void removeRef(char c) {
+            int idx = 0;
+            if (Character.isUpperCase(c)) {
+                idx = c - 'A';
+                upper[idx] = null;
+            } else {
+                idx = c - 'a';
+                lower[idx] = null;
+            }
+        }
+
+        public boolean equals(Object obj) {
+            if (obj instanceof Node) {
+                Node nd = (Node)obj;
+                if (cnt == nd.cnt && terminated == nd.terminated) {
+                    for (int i = 0; i < ALPH; i++) {
+                        Node rf1 = lower[i];
+                        Node rf2 = nd.lower[i];
+                        if (!(rf1 == null && rf1 == null || rf1.equals(rf2)))
+                            return false;
+                        rf1 = upper[i];
+                        rf2 = nd.upper[i];
+                        if (!(rf1 == null && rf1 == null || rf1.equals(rf2)))
+                            return false;
+                    }
+                    return true;
+                }
+            }
+            return  false;
+        }
+
+        private void writeInt(OutputStream out, int n) throws IOException {
+                byte[] bInt = new byte[4];
+                bInt[0] = (byte)n;
+                bInt[1] = (byte)(n >> 8);
+                bInt[2] = (byte)(n >> 16);
+                bInt[3] = (byte)(n >> 24);
+                out.write(bInt);
+        }
+
+        public void serialize(OutputStream out) {
+            try {
+                writeInt(out, terminated ? 1 : 0);
+                writeInt(out, cnt);
+                for (int i = 0; i < ALPH; i++) {
+                    writeInt(out, lower[i] == null ? 0 : 1);
+                }
+                for (int i = 0; i < ALPH; i++) {
+                    writeInt(out, upper[i] == null ? 0 : 1);
+                }
+                for (int i = 0; i < ALPH; i++) {
+                    if (lower[i] != null) lower[i].serialize(out);
+                }
+                for (int i = 0; i < ALPH; i++) {
+                    if (upper[i] != null) upper[i].serialize(out);
+                }
+            } catch (IOException e) {
+                throw new SerializationException();
+            }
+        }
+
+        private int readInt(InputStream in) throws IOException {
+            byte[] bInt  = new byte[4];
+
+            in.read(bInt);
+
+            int res = 0;
+            int pow = 1;
+
+            for (byte b : bInt) {
+                res += b * pow;
+                pow <<= 8;
+            }
+
+            return res;
+        }
+
+        public void deserialize(InputStream in) {
+            try {
+                terminated = (readInt(in) == 1);
+                cnt = readInt(in);
+                for (int i = 0; i < ALPH; i++) {
+                    lower[i] = (readInt(in) == 1 ? new Node() : null);
+                }
+                for (int i = 0; i < ALPH; i++) {
+                    upper[i] = (readInt(in) == 1 ? new Node() : null);
+                }
+                for (int i = 0; i < ALPH; i++) {
+                    if (lower[i] != null) lower[i].deserialize(in);
+                }
+                for (int i = 0; i < ALPH; i++) {
+                    if (upper[i] != null) upper[i].deserialize(in);
+                }
+            } catch (IOException e) {
+                throw new SerializationException();
+            }
+        }
     }
 
-    private int getCode(char c) {
-        return (int)c - (int)'A';
-    }
+    private Node root = new Node();
 
     public boolean add(String element) {
-        trieSize++;
-        element = element + END;
-
-        int cur  = 0;
-        int code = 0;
-        for (char c : element.toCharArray()) {
-            code = getCode(c);
-            counter[cur][code]++;
-
-            if (next[cur][code] == 0) {
-                next[cur][code] = (free.isEmpty() ? ++len : ((Integer)free.poll()).intValue());
+        if (!contains(element)) {
+            Node ref = root;
+            Node next = null;
+            ref.incCtn();
+            for (char c : element.toCharArray()) {
+                next = ref.getNext(c);
+                if (next == null) {
+                    ref.addRef(c);
+                    next = ref.getNext(c);
+                }
+                ref = next;
+                ref.incCtn();
             }
-
-            cur = next[cur][code];
+            ref.setTerm(true);
+            return true;
         }
-
-        counter[cur][code]++;
-
-        return (counter[cur][code] == 1 ? true : false);
-    }
-
-    public boolean contains(String element) {
-        element = element + END;
-        int cur = 0;
-
-        for (char c : element.toCharArray()) {
-            int code = getCode(c);
-
-            if (counter[cur][code] == 0) {
-                return false;
-            }
-
-            cur = next[cur][code];
-        }
-
-        return true;
+        return false;
     }
 
     public boolean remove(String element) {
         if (contains(element)) {
-            element = element + END;
-            int cur = 0;
-            trieSize--;
-
+            Node ref = root;
+            Node pref = null;
+            ref.decCnt();
             for (char c : element.toCharArray()) {
-                int code = getCode(c);
-                counter[cur][code]--;
-                int tmp = next[cur][code];
-
-                if (counter[cur][code] == 0) {
-                    free.add(tmp);
-                    next[cur][code] = 0;
+                pref = ref;
+                ref = ref.getNext(c);
+                ref.decCnt();
+                if (ref.getCnt() == 0) {
+                    pref.removeRef(c);
+                    break;
                 }
-
-                cur = tmp;
             }
             return true;
         }
         return false;
     }
 
+    public boolean contains(String element) {
+        Node ref = root;
+        Node next = null;
+        for (char c : element.toCharArray()) {
+            next = ref.getNext(c);
+            if (next == null) return false;
+            ref = next;
+        }
+        return (ref.isTerm() ? true : false);
+    }
+
     public int size() {
-        return trieSize;
+        return root.getCnt();
     }
 
     public int howManyStartsWithPrefix(String prefix) {
-        int cur = 0;
-        int res = 0;
-
-        for (char c : prefix.toCharArray()) {
-            int code = getCode(c);
-
-            if (counter[cur][code] == 0) {
-                return 0;
-            }
-
-            res = counter[cur][code];
-            cur = next[cur][code];
+        Node ref = root;
+        Node next = null;
+        for (int i = 0; i < prefix.length(); i++) {
+            next = ref.getNext(prefix.charAt(i));
+            if (next == null) return 0;
+            ref = next;
         }
-
-        return res;
+        return ref.getCnt();
     }
 
-    private void writeInt(OutputStream out, int n) throws IOException {
-        byte[] bInt = new byte[4];
-        bInt[0] = (byte)(n & ((1 << 8) - 1));
-        bInt[1] = (byte)((n >> 8) & ((1 << 8) - 1));
-        bInt[2] = (byte)((n >> 16) & ((1 << 8) - 1));
-        bInt[3] = (byte)((n >> 24) & ((1 << 8) - 1));
-        out.write(bInt);
+    public void serialize(OutputStream out) {
+        root.serialize(out);
     }
 
-    public void serialize(OutputStream out) throws SerializationException {
-        try {
-            writeInt(out, len);
-
-            for (int i = 0; i < len; i++)
-                for (int j = 0; j < ALPHABET; j++)
-                    writeInt(out, counter[i][j]);
-
-            for (int i = 0; i < len; i++)
-                for (int j = 0; j < ALPHABET; j++)
-                    writeInt(out, next[i][j]);
-
-            Object[] freeArr = free.toArray();
-
-            writeInt(out, freeArr.length);
-
-            for (Object a : freeArr)
-                writeInt(out, (Integer)a);
-
-            writeInt(out, trieSize);
-        } catch (IOException e) {
-            throw new SerializationException();
-        }
+    public void deserialize(InputStream in) {
+        root.deserialize(in);
     }
 
-    private int readInt(InputStream in) throws IOException {
-        byte[] bInt  = new byte[4];
-
-        in.read(bInt);
-
-        int res = 0;
-        int pow = 1;
-
-        for (byte b : bInt) {
-            res += b * pow;
-            pow <<= 8;
-        }
-
-        return res;
-    }
-
-    public void deserialize(InputStream in) throws SerializationException {
-        try {
-            len = readInt(in);
-
-            for (int i = 0; i < len; i++)
-                for (int j = 0; j < ALPHABET; j++)
-                    counter[i][j] = readInt(in);
-
-            for (int i = 0; i < len; i++)
-                for (int j = 0; j < ALPHABET; j++)
-                    next[i][j] = readInt(in);
-
-            int l = readInt(in);
-            free = new LinkedList<Integer>();
-
-            for (int a = 0, i = 0; i < l; i++)
-                free.add(readInt(in));
-
-            trieSize = readInt(in);
-        } catch (IOException e) {
-            throw new SerializationException();
-        }
-    }
-
-    public boolean equals(Object obj) {
+    public boolean eqauls(Object obj) {
         if (obj instanceof StringSetImpl) {
-            StringSetImpl ref = (StringSetImpl) obj;
-
-            if (trieSize == ref.trieSize && len == ref.len && free.equals(ref.free)) {
-            
-                for (int i = 0; i < len; ++i) {
-                    for (int j = 0; j < ALPHABET; ++j) {
-                        if (!(counter[i][j] == ref.counter[i][j] && next[i][j] == ref.next[i][j]))
-                            return false;
-                    }
-                }
-            
-                return true;
-            }
-            else return false;
+            StringSetImpl ref = (StringSetImpl)obj;
+            return root.equals(ref.root);
         }
-        else return false;
+        return false;
     }
 }
