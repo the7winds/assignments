@@ -5,7 +5,7 @@ import java.util.*;
 
 public class StringSetImpl implements StringSet, StreamSerializable {
     private static final int ALPHABET = 100;
-    private static final int MAX_N    = 1000;
+    private static final int MAX_N    = 10000;
     private static final String END   = new Character((char) 164).toString();
     private int len = 0;
     private int trieSize = 0;
@@ -15,7 +15,7 @@ public class StringSetImpl implements StringSet, StreamSerializable {
 
 
     public StringSetImpl() {
-        free = new ArrayDeque<Integer>();
+        free = new LinkedList<Integer>();
         counter = new int[MAX_N][ALPHABET];
         next = new int[MAX_N][ALPHABET];
     }
@@ -171,7 +171,7 @@ public class StringSetImpl implements StringSet, StreamSerializable {
                     next[i][j] = readInt(in);
 
             int l = readInt(in);
-            free = new ArrayDeque<Integer>();
+            free = new LinkedList<Integer>();
 
             for (int a = 0, i = 0; i < l; i++)
                 free.add(readInt(in));
@@ -180,5 +180,25 @@ public class StringSetImpl implements StringSet, StreamSerializable {
         } catch (IOException e) {
             throw new SerializationException();
         }
+    }
+
+    public boolean equals(Object obj) {
+        if (obj instanceof StringSetImpl) {
+            StringSetImpl ref = (StringSetImpl) obj;
+
+            if (trieSize == ref.trieSize && len == ref.len && free.equals(ref.free)) {
+            
+                for (int i = 0; i < len; ++i) {
+                    for (int j = 0; j < ALPHABET; ++j) {
+                        if (!(counter[i][j] == ref.counter[i][j] && next[i][j] == ref.next[i][j]))
+                            return false;
+                    }
+                }
+            
+                return true;
+            }
+            else return false;
+        }
+        else return false;
     }
 }
