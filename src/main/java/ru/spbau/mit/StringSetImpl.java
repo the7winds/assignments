@@ -276,6 +276,7 @@ public class StringSetImpl implements StringSet, StreamSerializable {
 
     @Override
     public void deserialize(InputStream in) {
+        root = new Node();
         root.deserialize(in);
     }
 
