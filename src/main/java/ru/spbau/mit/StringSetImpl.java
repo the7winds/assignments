@@ -111,6 +111,18 @@ public class StringSetImpl implements StringSet, StreamSerializable {
                 }
 
                 out.write(bitNode.toByteArray());
+
+                for (Node l : lower) {
+                    if (l != null) {
+                        l.serialize(out);
+                    }
+                }
+
+                for (Node u : upper) {
+                    if (u != null) {
+                        u.serialize(out);
+                    }
+                }
             } catch (IOException e) {
                 throw new SerializationException();
             }
@@ -148,6 +160,20 @@ public class StringSetImpl implements StringSet, StreamSerializable {
                         upper[i] = new Node();
                     }
                     cur++;
+                }
+
+                for (Node l : lower) {
+                    if (l != null) {
+                        l.deserialize(in);
+                        count += l.count;
+                    }
+                }
+
+                for (Node u : upper) {
+                    if (u != null) {
+                        u.deserialize(in);
+                        count += u.count;
+                    }
                 }
             } catch (IOException e) {
                 throw new SerializationException();
@@ -210,139 +236,50 @@ public class StringSetImpl implements StringSet, StreamSerializable {
     }
 
     @Override
-    public boolean contains(String element) {
-        Node ref = root;
-        Node next = null;
-        for (char c : element.toCharArray()) {
-            next = ref.getNext(c);
-            if (next == null) return false;
-            ref = next;
-        }
-        return (ref.isTerm() ? true : false);
-    }
-
-    @Override
     public int size() {
         return root.getCount();
     }
 
-    @Override
-    public int howManyStartsWithPrefix(String prefix) {
+    private Object folowString(String element, Object o) {
         Node ref = root;
         Node next = null;
-        for (char c : prefix.toCharArray()) {
+        for (char c : element.toCharArray()) {
             next = ref.getNext(c);
-            if (next == null) return 0;
+            if (next == null) {
+                if (o instanceof Boolean)
+                    return false;
+                if (o instanceof Integer)
+                    return 0;
+            }
             ref = next;
         }
-        return ref.getCount();
+
+        if (o instanceof Boolean)
+            return (ref.isTerm() ? true : false);
+        if (o instanceof Integer)
+            return ref.getCount();
+        return new Object();
     }
 
-    private static class Triple {
-        Node node;
-        int l = 0;
-        int u = 0;
-        boolean used = false;
+    @Override
+    public boolean contains(String element) {
+        return (Boolean)folowString(element, new Boolean(false));
+    }
 
-        Triple(Node n) {
-            node = n;
-        }
+    @Override
+    public int howManyStartsWithPrefix(String prefix) {
+        return (Integer)folowString(prefix, new Integer(0));
     }
 
     @Override
     public void serialize(OutputStream out) {
-        Stack<Triple> stack = new Stack<Triple>();
-        stack.push(new Triple(root));
-
-        while (!stack.empty()) {
-            Triple cur = stack.peek();
-            Node node = cur.node;
-
-            if (!cur.used) {
-                node.serialize(out);
-                cur.used = true;
-            }
-
-            boolean flag = false;
-
-            for (; cur.l < Node.ALPH; cur.l++) {
-                Node e = node.lower[cur.l];
-                if (e != null) {
-                    cur.l++;
-                    flag = true;
-                    stack.push(new Triple(e));
-                    break;
-                }
-            }
-
-            if (flag) continue;
-
-            for (; cur.u < Node.ALPH; cur.u++) {
-                Node e = node.upper[cur.u];
-                if (e != null) {
-                    cur.u++;
-                    flag = true;
-                    stack.push(new Triple(e));
-                }
-            }
-
-            if (flag) continue;
-
-            stack.pop();
-        }
+        root.serialize(out);
     }
 
     @Override
     public void deserialize(InputStream in) {
         root = new Node();
-        Stack<Triple> stack = new Stack<Triple>();
-        stack.push(new Triple(root));
-
-        while (!stack.empty()) {
-            Triple cur = stack.peek();
-            Node node = cur.node;
-
-            if (!cur.used) {
-                node.deserialize(in);
-                cur.used = true;
-            }
-
-            boolean flag = false;
-
-            for (; cur.l < Node.ALPH; cur.l++) {
-                Node e = node.lower[cur.l];
-                if (e != null) {
-                    cur.l++;
-                    flag = true;
-                    stack.push(new Triple(e));
-                    break;
-                }
-            }
-
-            if (flag) continue;
-
-            for (; cur.u < Node.ALPH; cur.u++) {
-                Node e = node.upper[cur.u];
-                if (e != null) {
-                    cur.u++;
-                    flag = true;
-                    stack.push(new Triple(e));
-                    break;
-                }
-            }
-
-            if (flag) continue;
-
-            for (Node e : node.lower) {
-                node.count += (e != null ? e.count : 0);
-            }
-
-            for (Node e : node.upper) {
-                node.count += (e != null ? e.count : 0);
-            }
-
-            stack.pop();
-        }
+        root.deserialize(in);
     }
 
     @Override
