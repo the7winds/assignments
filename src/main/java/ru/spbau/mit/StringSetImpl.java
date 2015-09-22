@@ -6,7 +6,7 @@ import java.util.*;
 public class StringSetImpl implements StringSet, StreamSerializable {
     private static class Node implements  StreamSerializable {
         private static final int ALPH = 26;
-        private static final int byteNodeLen = (2 * ALPH + 1) / 8 + ((2 * ALPH + 1) % 8 > 0 ? 1 : 0);
+        private static final int byteNodeLen = (2 * ALPH + 2) / 8 + ((2 * ALPH + 2) % 8 > 0 ? 1 : 0);
         private Node[] upper = new Node[ALPH];
         private Node[] lower = new Node[ALPH];
         private boolean terminated = false;
@@ -95,7 +95,8 @@ public class StringSetImpl implements StringSet, StreamSerializable {
         public void serialize(OutputStream out) {
             try {
                 int cur = 0;
-                BitSet bitNode = new BitSet(2 * ALPH + 1);
+                BitSet bitNode = new BitSet(2 * ALPH + 2);
+                bitNode.set(2 * ALPH + 1, true);
                 bitNode.set(cur, terminated ? 1 : 0);
                 cur++;
 
@@ -109,25 +110,7 @@ public class StringSetImpl implements StringSet, StreamSerializable {
                     cur++;
                 }
 
-                byte[] byteNode = new byte[byteNodeLen];
-
-                for (int i = 0; i < bitNode.toByteArray().length; ++i) {
-                    byteNode[i] = bitNode.toByteArray()[i];
-                }
-
-                out.write(byteNode);
-
-                for (Node l : lower) {
-                    if (l != null) {
-                        l.serialize(out);
-                    }
-                }
-
-                for (Node u : upper) {
-                    if (u != null) {
-                        u.serialize(out);
-                    }
-                }
+                out.write(bitNode.toByteArray());
             } catch (IOException e) {
                 throw new SerializationException();
             }
@@ -165,20 +148,6 @@ public class StringSetImpl implements StringSet, StreamSerializable {
                         upper[i] = new Node();
                     }
                     cur++;
-                }
-
-                for (Node l : lower) {
-                    if (l != null) {
-                        l.deserialize(in);
-                        count += l.count;
-                    }
-                }
-
-                for (Node u : upper) {
-                    if (u != null) {
-                        u.deserialize(in);
-                        count += u.count;
-                    }
                 }
             } catch (IOException e) {
                 throw new SerializationException();
@@ -269,15 +238,110 @@ public class StringSetImpl implements StringSet, StreamSerializable {
         return ref.getCount();
     }
 
+    private static class Triple {
+        Node node;
+        int l = 0;
+        int u = 0;
+        boolean used = false;
+
+        Triple(Node n) {
+            node = n;
+        }
+    }
+
     @Override
     public void serialize(OutputStream out) {
-        root.serialize(out);
+        Stack<Triple> stack = new Stack<Triple>();
+        stack.push(new Triple(root));
+
+        while (!stack.empty()) {
+            Triple cur = stack.peek();
+            Node node = cur.node;
+
+            if (!cur.used) {
+                node.serialize(out);
+                cur.used = true;
+            }
+
+            boolean flag = false;
+
+            for (; cur.l < Node.ALPH; cur.l++) {
+                Node e = node.lower[cur.l];
+                if (e != null) {
+                    cur.l++;
+                    flag = true;
+                    stack.push(new Triple(e));
+                    break;
+                }
+            }
+
+            if (flag) continue;
+
+            for (; cur.u < Node.ALPH; cur.u++) {
+                Node e = node.upper[cur.u];
+                if (e != null) {
+                    cur.u++;
+                    flag = true;
+                    stack.push(new Triple(e));
+                }
+            }
+
+            if (flag) continue;
+
+            stack.pop();
+        }
     }
 
     @Override
     public void deserialize(InputStream in) {
-        root = new Node();
-        root.deserialize(in);
+        Stack<Triple> stack = new Stack<Triple>();
+        stack.push(new Triple(root));
+
+        while (!stack.empty()) {
+            Triple cur = stack.peek();
+            Node node = cur.node;
+
+            if (!cur.used) {
+                node.deserialize(in);
+                cur.used = true;
+            }
+
+            boolean flag = false;
+
+            for (; cur.l < Node.ALPH; cur.l++) {
+                Node e = node.lower[cur.l];
+                if (e != null) {
+                    cur.l++;
+                    flag = true;
+                    stack.push(new Triple(e));
+                    break;
+                }
+            }
+
+            if (flag) continue;
+
+            for (; cur.u < Node.ALPH; cur.u++) {
+                Node e = node.upper[cur.u];
+                if (e != null) {
+                    cur.u++;
+                    flag = true;
+                    stack.push(new Triple(e));
+                    break;
+                }
+            }
+
+            if (flag) continue;
+
+            for (Node e : node.lower) {
+                node.count += (e != null ? e.count : 0);
+            }
+
+            for (Node e : node.upper) {
+                node.count += (e != null ? e.count : 0);
+            }
+
+            stack.pop();
+        }
     }
 
     @Override
