@@ -153,6 +153,17 @@ public class StringSetImpl implements StringSet, StreamSerializable {
                 throw new SerializationException();
             }
         }
+
+        @Override
+        public int hashCode() {
+            final int magic = 37;
+            int hash = 1;
+            for (int i = 0; i < ALPH; i++)
+                hash += hash * magic + (lower[i] == null ? 0 : i);
+            for (int i = 0; i < ALPH; i++)
+                hash += hash * magic + (upper[i] == null ? 0 : i);
+            return hash;
+        }
     }
 
     private Node root = new Node();
@@ -244,5 +255,10 @@ public class StringSetImpl implements StringSet, StreamSerializable {
             return root.equals(ref.root);
         }
         return false;
+    }
+
+    @Override
+    public int hashCode() {
+        return root.hashCode();
     }
 }
