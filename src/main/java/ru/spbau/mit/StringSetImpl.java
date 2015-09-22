@@ -6,6 +6,7 @@ import java.util.*;
 public class StringSetImpl implements StringSet, StreamSerializable {
     private static class Node implements  StreamSerializable {
         private static final int ALPH = 26;
+        private static final int byteNodeLen = (2 * ALPH + 1) / 8 + ((2 * ALPH + 1) % 8 > 0 ? 1 : 0);
         private Node[] upper = new Node[ALPH];
         private Node[] lower = new Node[ALPH];
         private boolean terminated = false;
@@ -72,12 +73,17 @@ public class StringSetImpl implements StringSet, StreamSerializable {
                     for (int i = 0; i < ALPH; i++) {
                         Node rf1 = lower[i];
                         Node rf2 = nd.lower[i];
-                        if (!(rf1 == null && rf1 == null || rf1.equals(rf2)))
+
+                        if (!(rf1 == null && rf1 == null || rf1.equals(rf2))) {
                             return false;
+                        }
+
                         rf1 = upper[i];
                         rf2 = nd.upper[i];
-                        if (!(rf1 == null && rf1 == null || rf1.equals(rf2)))
+
+                        if (!(rf1 == null && rf1 == null || rf1.equals(rf2))) {
                             return false;
+                        }
                     }
                     return true;
                 }
@@ -85,69 +91,94 @@ public class StringSetImpl implements StringSet, StreamSerializable {
             return  false;
         }
 
-        private void writeInt(OutputStream out, int n) throws IOException {
-            byte[] bInt = new byte[4];
-            bInt[0] = (byte)n;
-            bInt[1] = (byte)(n >> 8);
-            bInt[2] = (byte)(n >> 16);
-            bInt[3] = (byte)(n >> 24);
-            out.write(bInt);
-        }
-
         @Override
         public void serialize(OutputStream out) {
             try {
-                writeInt(out, terminated ? 1 : 0);
-                writeInt(out, count);
-                for (int i = 0; i < ALPH; i++) {
-                    writeInt(out, lower[i] == null ? 0 : 1);
+                int cur = 0;
+                BitSet bitNode = new BitSet(2 * ALPH + 1);
+                bitNode.set(cur, terminated ? 1 : 0);
+                cur++;
+
+                for (Node l : lower) {
+                    bitNode.set(cur, l == null ? false : true);
+                    cur++;
                 }
-                for (int i = 0; i < ALPH; i++) {
-                    writeInt(out, upper[i] == null ? 0 : 1);
+
+                for (Node u : upper) {
+                    bitNode.set(cur, u == null ? false : true);
+                    cur++;
                 }
-                for (int i = 0; i < ALPH; i++) {
-                    if (lower[i] != null) lower[i].serialize(out);
+
+                byte[] byteNode = new byte[byteNodeLen];
+
+                for (int i = 0; i < bitNode.toByteArray().length; ++i) {
+                    byteNode[i] = bitNode.toByteArray()[i];
                 }
-                for (int i = 0; i < ALPH; i++) {
-                    if (upper[i] != null) upper[i].serialize(out);
+
+                out.write(byteNode);
+
+                for (Node l : lower) {
+                    if (l != null) {
+                        l.serialize(out);
+                    }
+                }
+
+                for (Node u : upper) {
+                    if (u != null) {
+                        u.serialize(out);
+                    }
                 }
             } catch (IOException e) {
                 throw new SerializationException();
             }
         }
 
-        private int readInt(InputStream in) throws IOException {
-            byte[] bInt  = new byte[4];
-
-            in.read(bInt);
-
-            int res = 0;
-            int pow = 1;
-
-            for (byte b : bInt) {
-                res += b * pow;
-                pow <<= 8;
-            }
-
-            return res;
+        boolean getBit(byte[] arr, int i ) {
+            return ((arr[i / 8] >> (i % 8)) & 1) == 1;
         }
 
         @Override
         public void deserialize(InputStream in) {
             try {
-                terminated = (readInt(in) == 1);
-                count = readInt(in);
-                for (int i = 0; i < ALPH; i++) {
-                    lower[i] = (readInt(in) == 1 ? new Node() : null);
+                byte[] byteNode = new byte[byteNodeLen];
+
+                in.read(byteNode);
+
+                int cur = 0;
+
+                terminated = getBit(byteNode, cur);
+                cur++;
+
+                if (terminated) {
+                    count++;
                 }
+
                 for (int i = 0; i < ALPH; i++) {
-                    upper[i] = (readInt(in) == 1 ? new Node() : null);
+                    if (getBit(byteNode, cur)) {
+                        lower[i] = new Node();
+                    }
+                    cur++;
                 }
+
                 for (int i = 0; i < ALPH; i++) {
-                    if (lower[i] != null) lower[i].deserialize(in);
+                    if (getBit(byteNode, cur)) {
+                        upper[i] = new Node();
+                    }
+                    cur++;
                 }
-                for (int i = 0; i < ALPH; i++) {
-                    if (upper[i] != null) upper[i].deserialize(in);
+
+                for (Node l : lower) {
+                    if (l != null) {
+                        l.deserialize(in);
+                        count += l.count;
+                    }
+                }
+
+                for (Node u : upper) {
+                    if (u != null) {
+                        u.deserialize(in);
+                        count += u.count;
+                    }
                 }
             } catch (IOException e) {
                 throw new SerializationException();
