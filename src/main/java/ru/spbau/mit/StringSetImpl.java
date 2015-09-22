@@ -294,6 +294,7 @@ public class StringSetImpl implements StringSet, StreamSerializable {
 
     @Override
     public void deserialize(InputStream in) {
+        root = new Node();
         Stack<Triple> stack = new Stack<Triple>();
         stack.push(new Triple(root));
 
