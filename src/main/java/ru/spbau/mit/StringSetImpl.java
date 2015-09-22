@@ -64,6 +64,7 @@ public class StringSetImpl implements StringSet, StreamSerializable {
             }
         }
 
+        @Override
         public boolean equals(Object obj) {
             if (obj instanceof Node) {
                 Node nd = (Node)obj;
@@ -85,14 +86,15 @@ public class StringSetImpl implements StringSet, StreamSerializable {
         }
 
         private void writeInt(OutputStream out, int n) throws IOException {
-                byte[] bInt = new byte[4];
-                bInt[0] = (byte)n;
-                bInt[1] = (byte)(n >> 8);
-                bInt[2] = (byte)(n >> 16);
-                bInt[3] = (byte)(n >> 24);
-                out.write(bInt);
+            byte[] bInt = new byte[4];
+            bInt[0] = (byte)n;
+            bInt[1] = (byte)(n >> 8);
+            bInt[2] = (byte)(n >> 16);
+            bInt[3] = (byte)(n >> 24);
+            out.write(bInt);
         }
 
+        @Override
         public void serialize(OutputStream out) {
             try {
                 writeInt(out, terminated ? 1 : 0);
@@ -130,6 +132,7 @@ public class StringSetImpl implements StringSet, StreamSerializable {
             return res;
         }
 
+        @Override
         public void deserialize(InputStream in) {
             try {
                 terminated = (readInt(in) == 1);
@@ -154,6 +157,7 @@ public class StringSetImpl implements StringSet, StreamSerializable {
 
     private Node root = new Node();
 
+    @Override
     public boolean add(String element) {
         if (!contains(element)) {
             Node ref = root;
@@ -174,6 +178,7 @@ public class StringSetImpl implements StringSet, StreamSerializable {
         return false;
     }
 
+    @Override
     public boolean remove(String element) {
         if (contains(element)) {
             Node ref = root;
@@ -193,6 +198,7 @@ public class StringSetImpl implements StringSet, StreamSerializable {
         return false;
     }
 
+    @Override
     public boolean contains(String element) {
         Node ref = root;
         Node next = null;
@@ -204,10 +210,12 @@ public class StringSetImpl implements StringSet, StreamSerializable {
         return (ref.isTerm() ? true : false);
     }
 
+    @Override
     public int size() {
         return root.getCnt();
     }
 
+    @Override
     public int howManyStartsWithPrefix(String prefix) {
         Node ref = root;
         Node next = null;
@@ -219,15 +227,18 @@ public class StringSetImpl implements StringSet, StreamSerializable {
         return ref.getCnt();
     }
 
+    @Override
     public void serialize(OutputStream out) {
         root.serialize(out);
     }
 
+    @Override
     public void deserialize(InputStream in) {
         root.deserialize(in);
     }
 
-    public boolean eqauls(Object obj) {
+    @Override
+    public boolean equals(Object obj) {
         if (obj instanceof StringSetImpl) {
             StringSetImpl ref = (StringSetImpl)obj;
             return root.equals(ref.root);
