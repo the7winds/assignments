@@ -4,12 +4,12 @@ import java.io.*;
 import java.util.*;
 
 public class StringSetImpl implements StringSet, StreamSerializable {
-    private class Node implements  StreamSerializable {
+    private static class Node implements  StreamSerializable {
         private static final int ALPH = 26;
         private Node[] upper = new Node[ALPH];
         private Node[] lower = new Node[ALPH];
         private boolean terminated = false;
-        private int cnt = 0;
+        private int count = 0;
 
         public Node getNext(char c) {
             int idx = 0;
@@ -31,15 +31,15 @@ public class StringSetImpl implements StringSet, StreamSerializable {
         }
 
         public void decCnt() {
-            cnt--;
+            count--;
         }
 
         public void incCtn() {
-            cnt++;
+            count++;
         }
 
         public int getCnt() {
-            return cnt;
+            return count;
         }
 
         public void addRef(char c) {
@@ -67,7 +67,7 @@ public class StringSetImpl implements StringSet, StreamSerializable {
         public boolean equals(Object obj) {
             if (obj instanceof Node) {
                 Node nd = (Node)obj;
-                if (cnt == nd.cnt && terminated == nd.terminated) {
+                if (count == nd.count && terminated == nd.terminated) {
                     for (int i = 0; i < ALPH; i++) {
                         Node rf1 = lower[i];
                         Node rf2 = nd.lower[i];
@@ -96,7 +96,7 @@ public class StringSetImpl implements StringSet, StreamSerializable {
         public void serialize(OutputStream out) {
             try {
                 writeInt(out, terminated ? 1 : 0);
-                writeInt(out, cnt);
+                writeInt(out, count);
                 for (int i = 0; i < ALPH; i++) {
                     writeInt(out, lower[i] == null ? 0 : 1);
                 }
@@ -133,7 +133,7 @@ public class StringSetImpl implements StringSet, StreamSerializable {
         public void deserialize(InputStream in) {
             try {
                 terminated = (readInt(in) == 1);
-                cnt = readInt(in);
+                count = readInt(in);
                 for (int i = 0; i < ALPH; i++) {
                     lower[i] = (readInt(in) == 1 ? new Node() : null);
                 }
