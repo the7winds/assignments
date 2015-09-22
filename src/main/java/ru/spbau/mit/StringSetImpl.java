@@ -31,15 +31,15 @@ public class StringSetImpl implements StringSet, StreamSerializable {
             return terminated;
         }
 
-        public void decCnt() {
+        public void decCount() {
             count--;
         }
 
-        public void incCtn() {
+        public void incCount() {
             count++;
         }
 
-        public int getCnt() {
+        public int getCount() {
             return count;
         }
 
@@ -204,7 +204,7 @@ public class StringSetImpl implements StringSet, StreamSerializable {
         if (!contains(element)) {
             Node ref = root;
             Node next = null;
-            ref.incCtn();
+            ref.incCount();
             for (char c : element.toCharArray()) {
                 next = ref.getNext(c);
                 if (next == null) {
@@ -212,7 +212,7 @@ public class StringSetImpl implements StringSet, StreamSerializable {
                     next = ref.getNext(c);
                 }
                 ref = next;
-                ref.incCtn();
+                ref.incCount();
             }
             ref.setTerm(true);
             return true;
@@ -225,12 +225,12 @@ public class StringSetImpl implements StringSet, StreamSerializable {
         if (contains(element)) {
             Node ref = root;
             Node pref = null;
-            ref.decCnt();
+            ref.decCount();
             for (char c : element.toCharArray()) {
                 pref = ref;
                 ref = ref.getNext(c);
-                ref.decCnt();
-                if (ref.getCnt() == 0) {
+                ref.decCount();
+                if (ref.getCount() == 0) {
                     pref.removeRef(c);
                     break;
                 }
@@ -254,7 +254,7 @@ public class StringSetImpl implements StringSet, StreamSerializable {
 
     @Override
     public int size() {
-        return root.getCnt();
+        return root.getCount();
     }
 
     @Override
@@ -266,7 +266,7 @@ public class StringSetImpl implements StringSet, StreamSerializable {
             if (next == null) return 0;
             ref = next;
         }
-        return ref.getCnt();
+        return ref.getCount();
     }
 
     @Override
