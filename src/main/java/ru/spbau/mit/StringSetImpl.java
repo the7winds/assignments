@@ -230,8 +230,8 @@ public class StringSetImpl implements StringSet, StreamSerializable {
     public int howManyStartsWithPrefix(String prefix) {
         Node ref = root;
         Node next = null;
-        for (int i = 0; i < prefix.length(); i++) {
-            next = ref.getNext(prefix.charAt(i));
+        for (char c : prefix.toCharArray()) {
+            next = ref.getNext(c);
             if (next == null) return 0;
             ref = next;
         }
