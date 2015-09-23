@@ -5,22 +5,18 @@ import java.util.*;
 
 public class StringSetImpl implements StringSet, StreamSerializable {
     private static class Node implements  StreamSerializable {
-        private static final int ALPH = 26;
-        private static final int byteNodeLen = (2 * ALPH + 2) / 8 + ((2 * ALPH + 2) % 8 > 0 ? 1 : 0);
-        private Node[] upper = new Node[ALPH];
-        private Node[] lower = new Node[ALPH];
+        private static final int ALPH = 2 * 26;
+        private static final int byteNodeLen = (ALPH + 2) / 8 + ((ALPH + 2) % 8 > 0 ? 1 : 0);
+        private Node[] alph = new Node[ALPH];
         private boolean terminated = false;
         private int count = 0;
 
+        private int getCode(char c) {
+            return c - 'A' + (Character.isLowerCase(c) ? + 'Z' + 1 - 'a' : 0);
+        }
+
         public Node getNext(char c) {
-            int idx = 0;
-            if (Character.isUpperCase(c)) {
-                idx = c - 'A';
-                return upper[idx];
-            } else {
-                idx = c - 'a';
-                return lower[idx];
-            }
+            return alph[getCode(c)];
         }
 
         public void setTerm(boolean t) {
@@ -44,25 +40,11 @@ public class StringSetImpl implements StringSet, StreamSerializable {
         }
 
         public void addRef(char c) {
-            int idx = 0;
-            if (Character.isUpperCase(c)) {
-                idx = c - 'A';
-                upper[idx] = new Node();
-            } else {
-                idx = c - 'a';
-                lower[idx] = new Node();
-            }
+            alph[getCode(c)] = new Node();
         }
 
         public void removeRef(char c) {
-            int idx = 0;
-            if (Character.isUpperCase(c)) {
-                idx = c - 'A';
-                upper[idx] = null;
-            } else {
-                idx = c - 'a';
-                lower[idx] = null;
-            }
+            alph[getCode(c)] = null;
         }
 
         @Override
@@ -71,17 +53,10 @@ public class StringSetImpl implements StringSet, StreamSerializable {
                 Node nd = (Node)obj;
                 if (count == nd.count && terminated == nd.terminated) {
                     for (int i = 0; i < ALPH; i++) {
-                        Node rf1 = lower[i];
-                        Node rf2 = nd.lower[i];
+                        Node rf1 = alph[i];
+                        Node rf2 = nd.alph[i];
 
-                        if (!(rf1 == null && rf1 == null || rf1.equals(rf2))) {
-                            return false;
-                        }
-
-                        rf1 = upper[i];
-                        rf2 = nd.upper[i];
-
-                        if (!(rf1 == null && rf1 == null || rf1.equals(rf2))) {
+                        if (!(rf1 == null && rf2 == null || rf1 != null && rf1.equals(rf2))) {
                             return false;
                         }
                     }
@@ -95,32 +70,21 @@ public class StringSetImpl implements StringSet, StreamSerializable {
         public void serialize(OutputStream out) {
             try {
                 int cur = 0;
-                BitSet bitNode = new BitSet(2 * ALPH + 2);
-                bitNode.set(2 * ALPH + 1, true);
+                BitSet bitNode = new BitSet(ALPH + 2);
+                bitNode.set(ALPH + 1, true);
                 bitNode.set(cur, terminated ? 1 : 0);
                 cur++;
 
-                for (Node l : lower) {
-                    bitNode.set(cur, l == null ? false : true);
-                    cur++;
-                }
-
-                for (Node u : upper) {
-                    bitNode.set(cur, u == null ? false : true);
+                for (Node a : alph) {
+                    bitNode.set(cur, a != null);
                     cur++;
                 }
 
                 out.write(bitNode.toByteArray());
 
-                for (Node l : lower) {
-                    if (l != null) {
-                        l.serialize(out);
-                    }
-                }
-
-                for (Node u : upper) {
-                    if (u != null) {
-                        u.serialize(out);
+                for (Node a : alph) {
+                    if (a != null) {
+                        a.serialize(out);
                     }
                 }
             } catch (IOException e) {
@@ -150,29 +114,15 @@ public class StringSetImpl implements StringSet, StreamSerializable {
 
                 for (int i = 0; i < ALPH; i++) {
                     if (getBit(byteNode, cur)) {
-                        lower[i] = new Node();
+                        alph[i] = new Node();
                     }
                     cur++;
                 }
 
-                for (int i = 0; i < ALPH; i++) {
-                    if (getBit(byteNode, cur)) {
-                        upper[i] = new Node();
-                    }
-                    cur++;
-                }
-
-                for (Node l : lower) {
-                    if (l != null) {
-                        l.deserialize(in);
-                        count += l.count;
-                    }
-                }
-
-                for (Node u : upper) {
-                    if (u != null) {
-                        u.deserialize(in);
-                        count += u.count;
+                for (Node a : alph) {
+                    if (a != null) {
+                        a.deserialize(in);
+                        count += a.count;
                     }
                 }
             } catch (IOException e) {
@@ -184,10 +134,11 @@ public class StringSetImpl implements StringSet, StreamSerializable {
         public int hashCode() {
             final int magic = 37;
             int hash = 1;
-            for (int i = 0; i < ALPH; i++)
-                hash += hash * magic + (lower[i] == null ? 0 : i);
-            for (int i = 0; i < ALPH; i++)
-                hash += hash * magic + (upper[i] == null ? 0 : i);
+
+            for (int i = 0; i < ALPH; i++) {
+                hash += hash * magic + (alph[i] == null ? 0 : i);
+            }
+
             return hash;
         }
     }
@@ -257,7 +208,7 @@ public class StringSetImpl implements StringSet, StreamSerializable {
     @Override
     public boolean contains(String element) {
         Node node = folowString(element);
-        return (node != null && node.isTerm() ? true : false);
+        return (node != null && node.isTerm());
     }
 
     @Override
