@@ -240,35 +240,30 @@ public class StringSetImpl implements StringSet, StreamSerializable {
         return root.getCount();
     }
 
-    private Object folowString(String element, Object o) {
+    Node folowString(String element) {
         Node ref = root;
         Node next = null;
         for (char c : element.toCharArray()) {
             next = ref.getNext(c);
             if (next == null) {
-                if (o instanceof Boolean)
-                    return false;
-                if (o instanceof Integer)
-                    return 0;
+                return null;
             }
             ref = next;
         }
 
-        if (o instanceof Boolean)
-            return (ref.isTerm() ? true : false);
-        if (o instanceof Integer)
-            return ref.getCount();
-        return new Object();
+        return ref;
     }
 
     @Override
     public boolean contains(String element) {
-        return (Boolean)folowString(element, new Boolean(false));
+        Node node = folowString(element);
+        return (node != null && node.isTerm() ? true : false);
     }
 
     @Override
     public int howManyStartsWithPrefix(String prefix) {
-        return (Integer)folowString(prefix, new Integer(0));
+        Node node = folowString(prefix);
+        return (node != null ? node.getCount() : 0);
     }
 
     @Override
