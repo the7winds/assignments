@@ -191,7 +191,7 @@ public class StringSetImpl implements StringSet, StreamSerializable {
         return root.getCount();
     }
 
-    Node folowString(String element) {
+    private Node folowString(String element) {
         Node ref = root;
         Node next = null;
         for (char c : element.toCharArray()) {
