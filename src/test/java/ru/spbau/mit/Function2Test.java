@@ -11,7 +11,7 @@ public class Function2Test {
                 }
             };
 
-    Function1<Integer, Integer> inc =
+    private static Function1<Integer, Integer> inc =
             new Function1<Integer, Integer> () {
                 public Integer apply(Integer a) {
                     return a + 1;
