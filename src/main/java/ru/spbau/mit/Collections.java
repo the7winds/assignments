@@ -4,10 +4,8 @@ import java.util.Collection;
 import java.util.Iterator;
 import java.util.LinkedList;
 
-public class Collections {
-    private Collections() {}
-
-	public static <X, Y> Collection<Y> map(Function1<? super X, ? extends Y> f,
+abstract class Collections {
+    public static <X, Y> Collection<Y> map(Function1<? super X, ? extends Y> f,
                                            Iterable<X> collection, Collection<Y> result) {
         for (X e : collection) {
             result.add(f.apply(e));

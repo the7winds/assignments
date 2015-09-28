@@ -48,8 +48,8 @@ public class CollectionsTest {
 
         Collections.filter(odd, li1, li2);
 
-        for (int i = 0; i < li2.size(); ++i) {
-            assertTrue(odd.apply(li2.get(i)));
+        for (Integer aLi2 : li2) {
+            assertTrue(odd.apply(aLi2));
         }
     }
 
