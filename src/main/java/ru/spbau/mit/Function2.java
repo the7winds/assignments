@@ -3,7 +3,7 @@ package ru.spbau.mit;
 abstract class Function2<X, Y, Z> { // (X, Y) -> Z
     public abstract Z apply(X arg1, Y arg2);
 
-    public <W> Function2<X, Y, W> compose(final Function1<Z, W> outer) { // outer(this)
+    public <W> Function2<X, Y, W> compose(final Function1<? super Z, W> outer) { // outer(this)
         final Function2<X, Y, Z> inner = this;
 
         return new Function2<X, Y, W>() {
