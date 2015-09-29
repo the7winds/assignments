@@ -3,16 +3,16 @@ package ru.spbau.mit;
 abstract class Predicate<X> extends Function1<X, Boolean> {
     public abstract Boolean apply(X arg);
 
-    public static final Predicate ALWAYS_TRUE = new Predicate() {
+    public static final Predicate<Object> ALWAYS_TRUE = new Predicate<Object>() {
         @Override
         public Boolean apply(Object obj) {
             return true;
         }
     };
 
-    public static final Predicate ALWAYS_FALSE = ALWAYS_TRUE.not();
+    public static final Predicate<Object> ALWAYS_FALSE = ALWAYS_TRUE.not();
 
-    public Predicate<X> or(final Predicate<X> right) {
+    public Predicate<X> or(final Predicate<? super X> right) {
         final Predicate<X> left = this;
 
         return new Predicate<X>() {
@@ -23,7 +23,7 @@ abstract class Predicate<X> extends Function1<X, Boolean> {
         };
     }
 
-    public Predicate<X> and(final Predicate<X> right) {
+    public Predicate<X> and(final Predicate<? super X> right) {
         final Predicate<X> left = this;
 
         return new Predicate<X>() {

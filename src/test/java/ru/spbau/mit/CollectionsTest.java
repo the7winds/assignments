@@ -30,7 +30,7 @@ public class CollectionsTest {
         Collections.map(odd, li, lb);
 
         for (int i = 0; i < size; ++i) {
-            assertTrue(odd.apply(i) == lb.get(i));
+            assertEquals(odd.apply(i), lb.get(i));
         }
     }
 

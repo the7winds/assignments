@@ -11,7 +11,7 @@ abstract class Collections {
             result.add(f.apply(e));
         }
 
-		return result;
+        return result;
 	}
 
     public static <X> Iterable<X> filter(Predicate<? super X> pred,
@@ -50,8 +50,8 @@ abstract class Collections {
         return result;
     }
 
-    public static <X> X foldl(Function2<X, X, X> f, X init, Iterable<X> collection) {
-        X result = init;
+    public static <X, Y> Y foldl(Function2<Y, X, Y> f, Y init, Iterable<X> collection) {
+        Y result = init;
 
         for (X element : collection) {
             result = f.apply(result, element);
@@ -60,8 +60,8 @@ abstract class Collections {
         return result;
     }
 
-    public static <X> X foldr(Function2<X, X, X> f, X init, Iterable<X> collection) {
-        X result = init;
+    public static <X, Y> Y foldr(Function2<X, Y, Y> f, Y init, Iterable<X> collection) {
+        Y result = init;
         LinkedList<X> lst = new LinkedList<X>();
 
         for (X element : collection) {
