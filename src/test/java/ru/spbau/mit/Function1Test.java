@@ -46,4 +46,32 @@ public class Function1Test {
             assertTrue(odd.apply(i) == inc.compose(inc).compose(odd).apply(i));
         }
     }
+
+    private static class A {
+    }
+
+    private static class B extends A {
+    }
+
+    private static class C extends B {
+    }
+
+    private static Function1<A, B> f1 = new Function1<A, B>() {
+        @Override
+        public B apply(A a) {
+            return new B();
+        }
+    };
+
+    private static Function1<A, C> f2 = new Function1<A, C>() {
+        @Override
+        public C apply(A a) {
+            return new C();
+        }
+    };
+
+    @Test
+    public void composeTest03() {
+        f1.compose(f2);
+    }
 }
