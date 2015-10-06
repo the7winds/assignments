@@ -22,7 +22,7 @@ public class Function2Test {
     public void alpplyTest() {
         for (int i = 0; i < 100; i++) {
             for (int j = 0; j < 100; j++) {
-                assertTrue(i + j == sum.apply(i, j));
+                assertEquals(Integer.valueOf(i + j), sum.apply(i, j));
             }
         }
     }
@@ -31,7 +31,7 @@ public class Function2Test {
     public void composeTest() {
         for (int i = 0; i < 100; i++) {
             for (int j = 0; j < 100; j++) {
-                assertTrue(i + j + 1 == sum.compose(inc).apply(j, i));
+                assertEquals(Integer.valueOf(i + j + 1), sum.compose(inc).apply(j, i));
             }
         }
     }
@@ -41,7 +41,7 @@ public class Function2Test {
         Function1<Integer, Integer> add5 = sum.bind1(5);
 
         for (int i = 0; i < 100; i++) {
-            assertTrue(i + 5 == add5.apply(i));
+            assertEquals(Integer.valueOf(i + 5), add5.apply(i));
         }
     }
 
@@ -50,7 +50,7 @@ public class Function2Test {
         Function1<Integer, Integer> add5 = sum.bind2(5);
 
         for (int i = 0; i < 100; i++) {
-            assertTrue(i + 5 == add5.apply(i));
+            assertEquals(Integer.valueOf(i + 5), add5.apply(i));
         }
     }
 
@@ -59,7 +59,7 @@ public class Function2Test {
         Function1<Integer, Function1<Integer, Integer>> f1 = sum.curry();
 
         for (int i = 0; i < 100; i++) {
-            assertTrue(2 * i == f1.apply(i).apply(i));
+            assertEquals(Integer.valueOf(2 * i), f1.apply(i).apply(i));
         }
     }
 }

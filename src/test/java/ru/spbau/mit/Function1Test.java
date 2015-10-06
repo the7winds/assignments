@@ -14,14 +14,14 @@ public class Function1Test {
     @Test
     public void applyTest01() {
         for (int i = -100; i < 100; i++) {
-            assertTrue(i + 1 == inc.apply(i));
+            assertEquals(Integer.valueOf(i + 1), inc.apply(i));
         }
     }
 
     @Test
     public void composeTest01() {
         for (int i = -100; i < 100; i++) {
-            assertTrue(i + 2 == inc.compose(inc).apply(i));
+            assertEquals(Integer.valueOf(i + 2), inc.compose(inc).apply(i));
         }
     }
 
@@ -43,7 +43,7 @@ public class Function1Test {
     @Test
     public void composeTest02() {
         for (int i = -100; i < 100; i++) {
-            assertTrue(odd.apply(i) == inc.compose(inc).compose(odd).apply(i));
+            assertEquals(odd.apply(i), inc.compose(inc).compose(odd).apply(i));
         }
     }
 

@@ -71,7 +71,7 @@ public class CollectionsTest {
 
         Collections.takeUnless(odd, li1, li2);
 
-        assertTrue(li2.size() == size);
+        assertEquals(li2.size(), size);
     }
 
     @Test
@@ -92,7 +92,7 @@ public class CollectionsTest {
 
         Collections.takeWhile(odd.not(), li1, li2);
 
-        assertTrue(li2.size() == size);
+        assertEquals(li2.size(), size);
     }
 
     private static Function2<Integer, Integer, Integer> sub =
@@ -112,7 +112,7 @@ public class CollectionsTest {
             li.add(i);
         }
 
-        assertTrue(-45 == Collections.foldl(sub, 0, li));
+        assertEquals(Integer.valueOf(-45), Collections.foldl(sub, 0, li));
     }
 
     @Test
@@ -125,7 +125,7 @@ public class CollectionsTest {
             li.add(i);
         }
 
-        assertTrue(4 == Collections.foldr(sub, 9, li));
+        assertEquals(Integer.valueOf(4), Collections.foldr(sub, 9, li));
     }
 
 

@@ -1,5 +1,6 @@
 package ru.spbau.mit;
 
+import org.junit.Assert;
 import org.junit.Test;
 import static org.junit.Assert.*;
 
@@ -53,17 +54,17 @@ public class PredicateTest {
         assertFalse(Predicate.ALWAYS_FALSE.apply("Object"));
     }
 
-    Predicate<Integer> failingFunc = new Predicate<Integer>() {
+    Predicate<Integer> fail = new Predicate<Integer>() {
         @Override
         public Boolean apply(Integer arg) {
-            assertTrue(false);
+            Assert.fail();
             return false;
         }
     };
 
     @Test
     public void orLazinessTest() {
-        grtr5.and(failingFunc).apply(1);
-        grtr5.or(failingFunc).apply(6);
+        grtr5.and(fail).apply(1);
+        grtr5.or(fail).apply(6);
     }
 }
