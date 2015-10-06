@@ -1,6 +1,5 @@
 package ru.spbau.mit;
 
-import org.junit.Assert;
 import org.junit.Test;
 import static org.junit.Assert.*;
 
@@ -57,7 +56,7 @@ public class PredicateTest {
     Predicate<Integer> fail = new Predicate<Integer>() {
         @Override
         public Boolean apply(Integer arg) {
-            Assert.fail();
+            fail();
             return false;
         }
     };

@@ -50,7 +50,7 @@ abstract class Collections {
         return result;
     }
 
-    public static <X, Y> Y foldl(Function2<Y, X, Y> f, Y init, Iterable<X> collection) {
+    public static <X, Y> Y foldl(Function2<? super Y, ? super X, ? extends Y> f, Y init, Iterable<X> collection) {
         Y result = init;
 
         for (X element : collection) {
@@ -60,7 +60,7 @@ abstract class Collections {
         return result;
     }
 
-    public static <X, Y> Y foldr(Function2<X, Y, Y> f, Y init, Iterable<X> collection) {
+    public static <X, Y> Y foldr(Function2<? super X, ? super Y, ? extends Y> f, Y init, Iterable<X> collection) {
         Y result = init;
         LinkedList<X> lst = new LinkedList<X>();
 
