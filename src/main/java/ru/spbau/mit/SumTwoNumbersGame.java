@@ -4,17 +4,46 @@ import java.util.*;
 
 
 public class SumTwoNumbersGame implements Game {
+
+    private GameServer server;
+
+    private int a;
+    private int b;
+    private Random rnd = new Random();
+
     public SumTwoNumbersGame(GameServer server) {
-        throw new UnsupportedOperationException("TODO: implement");
+        this.server = server;
+        genNumbers();
+    }
+
+    private void genNumbers() {
+        a = Math.abs(rnd.nextInt());
+        b = Math.abs(rnd.nextInt());
+    }
+
+    private String getGameStateMessage() {
+        return Integer.toString(a) + " " + Integer.toString(b);
+    }
+
+    private String getWinMessage(String id) {
+        return id + " won";
     }
 
     @Override
     public void onPlayerConnected(String id) {
-        throw new UnsupportedOperationException("TODO: implement");
+        server.sendTo(id, getGameStateMessage());
     }
 
     @Override
-    public void onPlayerSentMsg(String id, String msg) {
-        throw new UnsupportedOperationException("TODO: implement");
+    public synchronized void onPlayerSentMsg(String id, String msg) {
+        if (Integer.parseInt(msg) == a + b) {
+            server.sendTo(id, "Right");
+            genNumbers();
+            server.broadcast(getWinMessage(id));
+            server.broadcast(getGameStateMessage());
+
+        } else {
+            server.sendTo(id, "Wrong");
+        }
     }
 }
