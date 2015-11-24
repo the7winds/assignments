@@ -8,9 +8,9 @@ import java.util.*;
 
 public class GameServerImpl implements GameServer {
 
-    private Game game;
+    private final Game game;
     private int connectionsCounter = 0;
-    private Map<String, HandlerConnection> handlerConnectionMap =
+    private final Map<String, HandlerConnection> handlerConnectionMap =
             Collections.synchronizedMap(new Hashtable<String, HandlerConnection>());
 
     private class HandlerConnection extends Thread {
@@ -66,27 +66,27 @@ public class GameServerImpl implements GameServer {
         }
     }
 
-    public GameServerImpl(String gameClassName, Properties properties) {
-        try {
-            Class<?> aClass = Class.forName(gameClassName);
-            Constructor<?> constructor = aClass.getConstructor(GameServer.class);
-            game = (Game) constructor.newInstance(this);
+    public GameServerImpl(String gameClassName, Properties properties) throws ClassNotFoundException,
+                                                                            NoSuchMethodException,
+                                                                            IllegalAccessException,
+                                                                            InvocationTargetException,
+                                                                            InstantiationException {
 
-            for (String key : properties.stringPropertyNames()) {
-                String methodName = getSetterName(key);
-                String arg = properties.getProperty(key);
+        Class<?> aClass = Class.forName(gameClassName);
+        Constructor<?> constructor = aClass.getConstructor(GameServer.class);
+        game = (Game) constructor.newInstance(this);
 
-                if (isInt(arg)) {
-                    Method setter = aClass.getMethod(methodName, int.class);
-                    setter.invoke(game, Integer.parseInt(arg));
-                } else {
-                    Method setter = aClass.getMethod(methodName, String.class);
-                    setter.invoke(game, arg);
-                }
+        for (String key : properties.stringPropertyNames()) {
+            String methodName = getSetterName(key);
+            String arg = properties.getProperty(key);
+
+            if (isInt(arg)) {
+                Method setter = aClass.getMethod(methodName, int.class);
+                setter.invoke(game, Integer.parseInt(arg));
+            } else {
+                Method setter = aClass.getMethod(methodName, String.class);
+                setter.invoke(game, arg);
             }
-        } catch (NoSuchMethodException | InstantiationError | IllegalAccessException
-                    | InstantiationException | InvocationTargetException | ClassNotFoundException e) {
-            e.printStackTrace();
         }
     }
 

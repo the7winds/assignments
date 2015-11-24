@@ -5,11 +5,11 @@ import java.util.*;
 
 public class SumTwoNumbersGame implements Game {
 
-    private GameServer server;
+    private final GameServer server;
 
     private int a;
     private int b;
-    private Random rnd = new Random();
+    private final Random rnd = new Random();
 
     public SumTwoNumbersGame(GameServer server) {
         this.server = server;

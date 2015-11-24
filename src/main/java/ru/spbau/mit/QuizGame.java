@@ -9,11 +9,10 @@ import java.util.*;
 
 public class QuizGame implements Game {
 
-    private GameServer server;
+    private final GameServer server;
 
     private int delayUntilNextLetter;
     private int maxLettersToOpen;
-    private String dictionaryFilename;
     private Thread tick;
 
     private class Tick extends Thread {
@@ -23,28 +22,24 @@ public class QuizGame implements Game {
         @Override
         public void run() {
             while (!Thread.interrupted()) {
-                questionAnswer.nextQuestion();
-                server.broadcast(questionAnswer.getQuestion());
+                try {
+                    questionAnswer.nextQuestion();
+                    server.broadcast(questionAnswer.getQuestion());
 
-                openedLetters = 0;
+                    openedLetters = 0;
 
-                while (openedLetters < maxLettersToOpen) {
-                    try {
+                    while (openedLetters < maxLettersToOpen) {
                         Thread.sleep(delayUntilNextLetter);
-                    } catch (InterruptedException e) {
-                        return;
+                        openedLetters++;
+                        server.broadcast(getPrefixMessage());
                     }
-                    openedLetters++;
-                    server.broadcast(getPrefixMessage());
-                }
 
-                if (!Thread.interrupted()) {
-                    try {
+                    if (!Thread.interrupted()) {
                         Thread.sleep(delayUntilNextLetter);
-                    } catch (InterruptedException e) {
-                        return;
+                        server.broadcast(getTimeoutMessage());
                     }
-                    server.broadcast(getTimeoutMessage());
+                } catch (InterruptedException ignored) {
+                    return;
                 }
             }
         }
@@ -66,29 +61,25 @@ public class QuizGame implements Game {
         private String[] answers;
         private int current = -1;
 
-        QuestionAnswer(String dictionaryFilename) {
-            try {
-                BufferedReader reader = new BufferedReader(new FileReader(dictionaryFilename));
+        public QuestionAnswer(String dictionaryFilename) throws IOException {
+            BufferedReader reader = new BufferedReader(new FileReader(dictionaryFilename));
 
-                List<String> questions = new LinkedList<>();
-                List<String> answers = new LinkedList<>();
+            List<String> questions = new LinkedList<>();
+            List<String> answers = new LinkedList<>();
 
-                while (reader.ready()) {
-                    String str = reader.readLine();
+            while (reader.ready()) {
+                String str = reader.readLine();
 
-                    int mid = str.indexOf(";");
-                    String question = str.substring(0, mid);
-                    String answer = str.substring(mid + 1);
+                int mid = str.indexOf(";");
+                String question = str.substring(0, mid);
+                String answer = str.substring(mid + 1);
 
-                    questions.add(question);
-                    answers.add(answer);
-                }
-
-                this.questions = questions.toArray(new String[questions.size()]);
-                this.answers = answers.toArray(new String[answers.size()]);
-            } catch (IOException e) {
-                e.printStackTrace();
+                questions.add(question);
+                answers.add(answer);
             }
+
+            this.questions = questions.toArray(new String[questions.size()]);
+            this.answers = answers.toArray(new String[answers.size()]);
         }
 
         public void nextQuestion() {
@@ -149,8 +140,7 @@ public class QuizGame implements Game {
         return "The winner is " + id;
     }
 
-    public void setDictionaryFilename(String dictionaryFilename) {
-        this.dictionaryFilename = dictionaryFilename;
+    public void setDictionaryFilename(String dictionaryFilename) throws IOException {
         questionAnswer = new QuestionAnswer(dictionaryFilename);
     }
 
