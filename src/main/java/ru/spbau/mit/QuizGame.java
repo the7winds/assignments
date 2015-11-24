@@ -57,8 +57,8 @@ public class QuizGame implements Game {
 
     private static class QuestionAnswer {
 
-        private String[] questions;
-        private String[] answers;
+        private final String[] questions;
+        private final String[] answers;
         private int current = -1;
 
         public QuestionAnswer(String dictionaryFilename) throws IOException {
