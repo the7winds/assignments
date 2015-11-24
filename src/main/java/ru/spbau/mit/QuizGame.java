@@ -114,12 +114,10 @@ public class QuizGame implements Game {
 
     @Override
     public void onPlayerConnected(String id) {
-        System.out.println("Player " + id + " connected");
     }
 
     @Override
     public synchronized void onPlayerSentMsg(String id, String msg) {
-        System.out.println("Player " + id + ": " + msg);
         switch (msg) {
             case "!start":
                 tick = new Tick();

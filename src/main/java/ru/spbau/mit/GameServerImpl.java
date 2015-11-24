@@ -27,7 +27,7 @@ public class GameServerImpl implements GameServer {
         }
 
         @Override
-        public void run() { // TODO: add exception handler, synchronizations
+        public void run() {
             try {
                 game.onPlayerConnected(id);
                 while (!connection.isClosed()) {
@@ -39,7 +39,7 @@ public class GameServerImpl implements GameServer {
             }
         }
 
-        private void doSendTask() { // TODO: add read-write locks
+        private void doSendTask() {
             synchronized (sendMsgQueue) {
                 if (!connection.isClosed()) {
                     if (!sendMsgQueue.isEmpty()) {
@@ -50,7 +50,7 @@ public class GameServerImpl implements GameServer {
             }
         }
 
-        private void doRecieveTask() throws InterruptedException { // TODO: check
+        private void doRecieveTask() throws InterruptedException {
             if (!connection.isClosed()) {
                 String msg = connection.receive(TIMEOUT);
                 if (msg != null) {
@@ -59,7 +59,7 @@ public class GameServerImpl implements GameServer {
             }
         }
 
-        public void sendMessage(String message) { // TODO: read-write
+        public void sendMessage(String message) {
             synchronized (sendMsgQueue) {
                 sendMsgQueue.add(message);
             }
@@ -113,15 +113,14 @@ public class GameServerImpl implements GameServer {
     }
 
     @Override
-    public synchronized void broadcast(String message) {
-        System.out.println("Server: " + message);
+    public void broadcast(String message) {
         for (int i = 0; i < connectionsCounter; i++) {
             sendTo(Integer.toString(i), message);
         }
     }
 
     @Override
-    public synchronized void sendTo(String id, String message) {
+    public void sendTo(String id, String message) {
         HandlerConnection handlerConnection = handlerConnectionMap.get(id);
         handlerConnection.sendMessage(message);
     }
