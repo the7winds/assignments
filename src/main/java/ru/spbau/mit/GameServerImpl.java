@@ -20,7 +20,7 @@ public class GameServerImpl implements GameServer {
         private final Queue<String> sendMsgQueue = new LinkedList<>();
         private final int TIMEOUT = 10;
 
-        HandlerConnection(String id, Connection connection) {
+        public HandlerConnection(String id, Connection connection) {
             this.id = id;
             this.connection = connection;
             sendMessage(id);

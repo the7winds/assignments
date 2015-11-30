@@ -30,7 +30,7 @@ public class SumTwoNumbersGame implements Game {
     }
 
     @Override
-    public void onPlayerConnected(String id) {
+    public synchronized void onPlayerConnected(String id) {
         server.sendTo(id, getGameStateMessage());
     }
 
