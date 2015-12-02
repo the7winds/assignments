@@ -52,18 +52,8 @@ public class Injector {
                 args.add(findImpl(argType));
             }
 
-            checkDependencies(args);
-
             for (Class<?> arg : args) {
                 argsNodes.add(new Node(arg, dependencies));
-            }
-        }
-
-        private void checkDependencies(List<Class<?>> args) throws Exception {
-            for (Class<?> arg : args) {
-                if (dependencies.contains(arg)) {
-                    throw new InjectionCycleException();
-                }
             }
         }
 
@@ -72,6 +62,9 @@ public class Injector {
 
             for (Class<?> implClass : implementationClasses) {
                 if (checkExtends(argType, implClass) || checkImpl(argType, implClass)) {
+                    if (dependencies.contains(implClass)) {
+                        throw new InjectionCycleException();
+                    }
                     classes.add(implClass);
                 }
             }
