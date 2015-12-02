@@ -1,10 +1,7 @@
 package ru.spbau.mit;
 
 import java.lang.reflect.Constructor;
-import java.util.Hashtable;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 
 public class Injector {
@@ -14,14 +11,21 @@ public class Injector {
      * `implementationClassNames` for concrete dependencies.
      */
 
-    private static List<Class<?>> allClasses = new LinkedList();
-    private static Map<Class<?>, Object> initedObjects = new Hashtable<>();
-    private static List<Class> dependencies = new LinkedList<>();
+    private static List<Class<?>> allClasses;
+    private static Map<Class<?>, Object> initedObjects;
+    private static List<Class<?>> dependencies;
 
     public static Object initialize(String rootClassName, List<String> implementationClassNames) throws Exception {
+        allClasses = new LinkedList<>();
+        initedObjects = new Hashtable<>();
+        dependencies = new LinkedList<>();
+
+        Class objClass = Class.forName(rootClassName);
+
         for (String className : implementationClassNames) {
             allClasses.add(Class.forName(className));
         }
+        allClasses.add(objClass);
 
         return getObject(Class.forName(rootClassName));
     }
@@ -33,6 +37,7 @@ public class Injector {
 
     private static Object initObject(Class<?> objClass) throws Exception {
         checkDependencies(objClass);
+
         dependencies.add(objClass);
 
         Constructor constructor = objClass.getConstructors()[0];
