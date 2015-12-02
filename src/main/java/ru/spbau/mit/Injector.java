@@ -1,8 +1,10 @@
 package ru.spbau.mit;
 
 import java.lang.reflect.Constructor;
+import java.util.Hashtable;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 
 
 public class Injector {
@@ -12,82 +14,63 @@ public class Injector {
      * `implementationClassNames` for concrete dependencies.
      */
 
-    private static List<Class> implementationClasses = new LinkedList<>();
+    private static List<Class<?>> allClasses = new LinkedList();
+    private static Map<Class<?>, Object> initedObjects = new Hashtable<>();
+    private static List<Class> dependencies = new LinkedList<>();
 
     public static Object initialize(String rootClassName, List<String> implementationClassNames) throws Exception {
         for (String className : implementationClassNames) {
-            implementationClasses.add(Class.forName(className));
+            allClasses.add(Class.forName(className));
         }
 
-        rootObjectNode = new Node(Class.forName(rootClassName), new LinkedList<Class<?>>());
-
-        return rootObjectNode.object;
+        return getObject(Class.forName(rootClassName));
     }
 
-    private static class Node {
-        public Class<?> objectClass;
-        public Constructor<?> constructor;
-        public Object object;
-        public Class<?>[] argsTypes;
-        public List<Class<?>> dependencies = new LinkedList<>();
-        public List<Node> argsNodes = new LinkedList<>();
+    private static Object getObject(Class<?> objClass) throws Exception {
+        return initedObjects.containsKey(objClass) ? initedObjects.get(objClass)
+                                                   : initObject(objClass);
+    }
 
-        public Node(Class<?> aClass, List<Class<?>> dependencies) throws Exception {
-            objectClass = aClass;
-            constructor = objectClass.getConstructors()[0];
-            argsTypes = constructor.getParameterTypes();
+    private static Object initObject(Class<?> objClass) throws Exception {
+        checkDependencies(objClass);
 
-            this.dependencies.addAll(dependencies);
-            this.dependencies.add(objectClass);
+        Constructor constructor = objClass.getConstructors()[0];
+        Class<?>[] argsTypes = constructor.getParameterTypes();
 
-            InitArgsNodes(argsTypes);
+        Object[] args = getArgs(argsTypes);
+        Object obj = constructor.newInstance(args);
 
-            object = constructor.newInstance(getArgsObjArray());
-        }
+        initedObjects.put(objClass, obj);
 
-        private void InitArgsNodes(Class<?>[] argsTypes) throws Exception {
-            List<Class<?>> args = new LinkedList<>();
+        return  obj;
+    }
 
-            for (Class<?> argType : argsTypes) {
-                args.add(findImpl(argType));
-            }
+    private static Object[] getArgs(Class<?>[] argsTypes) throws Exception {
+        List<Object> args = new LinkedList<>();
 
-            for (Class<?> arg : args) {
-                argsNodes.add(new Node(arg, dependencies));
-            }
-        }
-
-        private Class<?> findImpl(Class<?> argType) throws Exception {
-            List<Class<?>> classes = new LinkedList<>();
-
-            for (Class<?> implClass : implementationClasses) {
-                if (argType.isAssignableFrom(implClass)) {
-                    if (dependencies.contains(implClass)) {
-                        throw new InjectionCycleException();
-                    }
-                    classes.add(implClass);
+        for (Class<?> argType : argsTypes) {
+            List<Class<?>> argsClasses = new LinkedList<>();
+            for (Class<?> aClass : allClasses) {
+                if (argType.isAssignableFrom(aClass)) {
+                    argsClasses.add(aClass);
                 }
             }
 
-            if (classes.size() == 0) {
+            if (argsClasses.isEmpty()) {
                 throw new ImplementationNotFoundException();
-            } else if (classes.size() > 1) {
+            } else if (argsClasses.size() > 1) {
                 throw new AmbiguousImplementationException();
             }
 
-            return classes.get(0);
+            args.add(getObject(argsClasses.get(0)));
         }
 
-        public Object[] getArgsObjArray() {
-            List<Object> argsObjArray = new LinkedList<>();
-
-            for (Node node : argsNodes) {
-                argsObjArray.add(node.object);
-            }
-
-            return argsObjArray.toArray();
-        }
+        return args.toArray();
     }
 
-    static private Node rootObjectNode;
+    private static void checkDependencies(Class<?> objClass) throws InjectionCycleException {
+        if (dependencies.contains(objClass)) {
+            throw  new InjectionCycleException();
+        }
+    }
 }
