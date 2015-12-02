@@ -33,6 +33,7 @@ public class Injector {
 
     private static Object initObject(Class<?> objClass) throws Exception {
         checkDependencies(objClass);
+        dependencies.add(objClass);
 
         Constructor constructor = objClass.getConstructors()[0];
         Class<?>[] argsTypes = constructor.getParameterTypes();
@@ -70,7 +71,7 @@ public class Injector {
 
     private static void checkDependencies(Class<?> objClass) throws InjectionCycleException {
         if (dependencies.contains(objClass)) {
-            throw  new InjectionCycleException();
+            throw new InjectionCycleException();
         }
     }
 }
