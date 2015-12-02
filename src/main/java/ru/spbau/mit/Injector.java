@@ -61,7 +61,7 @@ public class Injector {
             List<Class<?>> classes = new LinkedList<>();
 
             for (Class<?> implClass : implementationClasses) {
-                if (checkExtends(argType, implClass) || checkImpl(argType, implClass)) {
+                if (argType.isAssignableFrom(implClass)) {
                     if (dependencies.contains(implClass)) {
                         throw new InjectionCycleException();
                     }
@@ -76,27 +76,6 @@ public class Injector {
             }
 
             return classes.get(0);
-        }
-
-        private boolean checkExtends(Class<?> argType, Class<?> implClass) {
-            if (argType.equals(implClass) || implClass.getSuperclass().equals(argType)) {
-                    return true;
-            }
-
-            return false;
-        }
-
-        private boolean checkImpl(Class<?> interf, Class<?> implClass) {
-            if (interf.isInterface()) {
-                Class<?>[] interfs = implClass.getInterfaces();
-                for (Class<?> i : interfs) {
-                    if (i.equals(interf)) {
-                        return true;
-                    }
-                }
-            }
-
-            return false;
         }
 
         public Object[] getArgsObjArray() {
